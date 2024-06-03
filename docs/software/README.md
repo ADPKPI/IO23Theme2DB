@@ -1,6 +1,6 @@
 # Реалізація інформаційного та програмного забезпечення
 
-- SQL-скрипт для створення на початкового наповнення бази даних
+## SQL-скрипт для створення на початкового наповнення бази даних
 
 ```sql
 	-- MySQL Workbench Forward Engineering
@@ -215,7 +215,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 ```python
 from flask import Flask, request, jsonify
 from config import Config
-from models import db, Data
+from models import db, Tag
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -226,96 +226,79 @@ tables_created = False
 def create_tables():
     global tables_created
     if not tables_created:
-        db.create_all()
-        tables_created = True
+        with app.app_context():
+            db.create_all()
+            tables_created = True
 
 @app.before_request
 def call_create_tables():
     create_tables()
 
-@app.route('/data', methods=['POST'])
-def create_data():
+@app.route('/tags', methods=['POST'])
+def create_tag():
     data = request.get_json()
-    new_data = Data(
-        Date=data['Date'],
-        DataName=data['DataName'],
-        DataFormat=data['DataFormat'],
-        Tag_idTag=data['Tag_idTag'],
-        idData = data['idData']
-
+    new_tag = Tag(
+        TagName=data['TagName'],
+        idTag=data['idTag']
     )
-    db.session.add(new_data)
+    db.session.add(new_tag)
     db.session.commit()
-    return jsonify({"message": "Data created"}), 201
+    return jsonify({"message": "Tag created"}), 201
 
-@app.route('/data/<int:id>', methods=['GET'])
-def get_data(id):
-    data = Data.query.get_or_404(id)
+@app.route('/tags/<int:id>', methods=['GET'])
+def get_tag(id):
+    tag = Tag.query.get_or_404(id)
     return jsonify({
-        "idData": data.idData,
-        "Date": data.Date,
-        "DataName": data.DataName,
-        "DataFormat": data.DataFormat,
-        "Tag_idTag": data.Tag_idTag
+        "idTag": tag.idTag,
+        "TagName": tag.TagName
     })
 
-@app.route('/data/<int:id>', methods=['PUT'])
-def update_data(id):
-    data = Data.query.get_or_404(id)
-    updated_data = request.get_json()
-    data.Date = updated_data['Date']
-    data.DataName = updated_data['DataName']
-    data.DataFormat = updated_data['DataFormat']
-    data.Tag_idTag = updated_data['Tag_idTag']
+@app.route('/tags/<int:id>', methods=['PUT'])
+def update_tag(id):
+    tag = Tag.query.get_or_404(id)
+    data = request.get_json()
+    tag.TagName = data['TagName']
     db.session.commit()
-    return jsonify({"message": "Data updated"}), 200
+    return jsonify({"message": "Tag updated"}), 200
 
-@app.route('/data/<int:id>', methods=['DELETE'])
-def delete_data(id):
-    data = Data.query.get_or_404(id)
-    db.session.delete(data)
+@app.route('/tags/<int:id>', methods=['DELETE'])
+def delete_tag(id):
+    tag = Tag.query.get_or_404(id)
+    db.session.delete(tag)
     db.session.commit()
-    return jsonify({"message": "Data deleted"}), 200
+    return jsonify({"message": "Tag deleted"}), 200
 
-@app.route('/data', methods=['GET'])
-def get_all_data():
-    all_data = Data.query.all()
-    data_list = []
-    for data in all_data:
-        data_item = {
-            "idData": data.idData,
-            "Date": data.Date,
-            "DataName": data.DataName,
-            "DataFormat": data.DataFormat,
-            "Tag_idTag": data.Tag_idTag
+@app.route('/tags', methods=['GET'])
+def get_all_tags():
+    tags = Tag.query.all()
+    tags_data = []
+    for tag in tags:
+        tag_data = {
+            "idTag": tag.idTag,
+            "TagName": tag.TagName
         }
-        data_list.append(data_item)
-    return jsonify(data_list)
+        tags_data.append(tag_data)
+    return jsonify(tags_data)
 
-@app.route('/data/<int:id>', methods=['PATCH'])
-def partial_update_data(id):
-    data = Data.query.get_or_404(id)
-    updated_data = request.get_json()
-    if 'Date' in updated_data:
-        data.Date = updated_data['Date']
-    if 'DataName' in updated_data:
-        data.DataName = updated_data['DataName']
-    if 'DataFormat' in updated_data:
-        data.DataFormat = updated_data['DataFormat']
-    if 'Tag_idTag' in updated_data:
-        data.Tag_idTag = updated_data['Tag_idTag']
+@app.route('/tags/<int:id>', methods=['PATCH'])
+def partial_update_tag(id):
+    tag = Tag.query.get_or_404(id)
+    data = request.get_json()
+    if 'TagName' in data:
+        tag.TagName = data['TagName']
     db.session.commit()
-    return jsonify({"message": "Data updated partially"}), 200
+    return jsonify({"message": "Tag updated partially"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 ```
 ### Config.py
 ```python
 import os
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:Politech#2003@localhost/mydb'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:<MyPassword>@localhost/mydb'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 ```
 ### Models.py
